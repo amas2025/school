@@ -7,16 +7,21 @@ ACCESS_KEY = "1234"
 
 # Authentication Function
 def authenticate():
+    # Ensure session state is initialized
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    # Display login form
     st.title("🏫 School App - Login")
     st.write("Please enter the access key to continue:")
     user_key = st.text_input("Access Key", type="password")
 
-    if st.button("Submit"):
-        if user_key == ACCESS_KEY:
-            st.session_state["authenticated"] = True
-            st.success("Access granted! Redirecting to the app...")
-        else:
-            st.error("Invalid access key. Please try again.")
+    # Validate access key
+    if user_key == ACCESS_KEY:
+        st.session_state["authenticated"] = True
+        st.success("Access granted! Redirecting to the app...")
+    elif user_key and user_key != ACCESS_KEY:
+        st.error("Invalid access key. Please try again.")
 
 # Section: Posts
 def display_posts():
@@ -71,10 +76,11 @@ def enhanced_navigation():
 
 # Main function
 def main():
-    # Check if the user is authenticated
+    # Initialize session state if not already done
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
 
+    # Check authentication
     if not st.session_state["authenticated"]:
         authenticate()
     else:
