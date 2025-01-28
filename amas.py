@@ -1,99 +1,97 @@
-
 import streamlit as st
 import pandas as pd
-from datetime import date
+from datetime import datetime
 
-# Simulated data storage (in a real-world app, use a database)
-homework_data = []
-post_data = []
-notifications = []
-results_data = []
+# Predefined access key
+ACCESS_KEY = "1234"
 
-# Function to add a new homework item
-def add_homework(subject, description, due_date):
-    homework_data.append({"Subject": subject, "Description": description, "Due Date": due_date})
+# Authentication Function
+def authenticate():
+    st.title("🏫 School App - Login")
+    st.write("Please enter the access key to continue:")
+    user_key = st.text_input("Access Key", type="password")
 
-# Function to add a new post
-def add_post(title, content):
-    post_data.append({"Title": title, "Content": content, "Date": date.today()})
+    # Authenticate on form submission
+    if user_key == ACCESS_KEY:
+        st.session_state["authenticated"] = True
+        st.success("Access granted! Redirecting to the app...")
+    elif user_key and user_key != ACCESS_KEY:
+        st.error("Invalid access key. Please try again.")
 
-# Function to add a notification
-def add_notification(content):
-    notifications.append({"Content": content, "Date": date.today()})
+# Section: Posts
+def display_posts():
+    st.header("📜 Posts")
+    st.write("Share and view posts below:")
 
-# Function to add a result
-def add_result(student_name, subject, marks):
-    results_data.append({"Student Name": student_name, "Subject": subject, "Marks": marks})
+    if "posts" not in st.session_state:
+        st.session_state.posts = []
 
-# Streamlit app
-st.title("School Management Portal")
+    new_post = st.text_area("Write a new post:")
+    if st.button("Submit Post"):
+        if new_post.strip():
+            st.session_state.posts.append({
+                "content": new_post.strip(),
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+            st.success("Your post has been submitted!")
+        else:
+            st.error("Post cannot be empty!")
 
-menu = ["Home", "Homework", "Posts", "Notifications", "Results", "Admin"]
-choice = st.sidebar.selectbox("Menu", menu)
+    if st.session_state.posts:
+        st.write("### Recent Posts")
+        for post in reversed(st.session_state.posts):
+            st.markdown(f"""
+            <div style="
+                background-color: #f9f9f9; 
+                padding: 15px; 
+                border-radius: 10px; 
+                margin-bottom: 10px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);">
+                <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    {post['content']}
+                </p>
+                <p style="font-size: 12px; color: #888; text-align: right;">
+                    Posted on: {post['timestamp']}
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
 
-if choice == "Home":
-    st.subheader("Welcome to the School Management Portal")
-    st.write("Use the menu to navigate.")
+# Other sections (Announcements, Homework, Exam Schedule, Results) remain the same...
 
-elif choice == "Homework":
-    st.subheader("Homework")
-    for hw in homework_data:
-        st.write(f"**Subject:** {hw['Subject']}")
-        st.write(f"**Description:** {hw['Description']}")
-        st.write(f"**Due Date:** {hw['Due Date']}")
-        st.write("---")
+# Enhanced Navigation Bar
+def enhanced_navigation():
+    st.sidebar.markdown("<h4 style='text-align: center; margin-bottom: 20px;'>📚 Navigation</h4>", unsafe_allow_html=True)
 
-elif choice == "Posts":
-    st.subheader("Posts")
-    for post in post_data:
-        st.write(f"### {post['Title']}")
-        st.write(post['Content'])
-        st.write(f"_Posted on: {post['Date']}_")
-        st.write("---")
+    menu = st.sidebar.radio(
+        "Navigate to",
+        ["📜 Posts", "📢 Announcements", "📂 Homework", "📅 Exam Schedule", "📊 Results"],
+        label_visibility="collapsed"
+    )
+    return menu
 
-elif choice == "Notifications":
-    st.subheader("Notifications")
-    for notification in notifications:
-        st.write(f"- {notification['Content']} (Posted on: {notification['Date']})")
+# Main function
+def main():
+    # Check if the user is authenticated
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
 
-elif choice == "Results":
-    st.subheader("Results")
-    df = pd.DataFrame(results_data)
-    if not df.empty:
-        st.dataframe(df)
+    if not st.session_state["authenticated"]:
+        authenticate()
     else:
-        st.write("No results available.")
+        # Show the main app if authenticated
+        st.title("🏫 School App")
+        menu = enhanced_navigation()
 
-elif choice == "Admin":
-    st.subheader("Admin Panel")
+        if "Posts" in menu:
+            display_posts()
+        elif "Announcements" in menu:
+            display_announcements()
+        elif "Homework" in menu:
+            display_homework()
+        elif "Exam Schedule" in menu:
+            display_exam_schedule()
+        elif "Results" in menu:
+            display_results()
 
-    admin_choice = st.selectbox("Admin Actions", ["Add Homework", "Add Post", "Add Notification", "Add Result"])
-
-    if admin_choice == "Add Homework":
-        subject = st.text_input("Subject")
-        description = st.text_area("Description")
-        due_date = st.date_input("Due Date")
-        if st.button("Add Homework"):
-            add_homework(subject, description, due_date)
-            st.success("Homework added successfully!")
-
-    elif admin_choice == "Add Post":
-        title = st.text_input("Title")
-        content = st.text_area("Content")
-        if st.button("Add Post"):
-            add_post(title, content)
-            st.success("Post added successfully!")
-
-    elif admin_choice == "Add Notification":
-        content = st.text_area("Notification Content")
-        if st.button("Add Notification"):
-            add_notification(content)
-            st.success("Notification added successfully!")
-
-    elif admin_choice == "Add Result":
-        student_name = st.text_input("Student Name")
-        subject = st.text_input("Subject")
-        marks = st.number_input("Marks", min_value=0, max_value=100, step=1)
-        if st.button("Add Result"):
-            add_result(student_name, subject, marks)
-            st.success("Result added successfully!")
+if __name__ == "__main__":
+    main()
